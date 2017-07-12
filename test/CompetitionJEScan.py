@@ -3,6 +3,7 @@ import os
 import codecs
 import openpyxl
 import re 
+import chardet
 
 '''
 用于JE数据的处理了
@@ -39,6 +40,8 @@ def clean_data2(filePath):
         for j in l_decs:
             f1.writelines(j)
 
+
+
 #生成workspace
 def createWorkSpace(filePath,sep):
     """
@@ -47,17 +50,19 @@ def createWorkSpace(filePath,sep):
     """
     l_desc=[]
     index=0
-    with codecs.open(filePath,'r','utf-8',errors='ignore') as f:
-        for line in f:
-            if line.strip().startswith("Field"):
-                l_desc.append("F"+str(index+1).zfill(3)+"_"+line.split(":")[1].strip()+" computed\r\n")
-            if line.strip().startswith("Highest"):
-                l_desc.append("substr( alltrim( split( Full_Record , chr(" +str(ord(sep))+"), "+str(index+1).zfill(3)+" , chr( 34 ) ) ) , 1 , "+line.split(":")[1].strip().split(' ')[0]+" )\r\n")
-                index+=1
+    f=re.split('\r\n|\n|\r',_getFileEncoding(filePath)[1])
+    for line in f:
+        if line.strip().startswith("Field"):
+            l_desc.append("F"+str(index+1).zfill(3)+"_"+line.split(":")[1].strip()+" computed\r\n")
+        if line.strip().startswith("Highest"):
+            l_desc.append("substr( alltrim( split( Full_Record , chr(" +str(ord(sep))+"), "+str(index+1).zfill(3)+" , chr( 34 ) ) ) , 1 , "+line.split(":")[1].strip().split(' ')[0]+" )\r\n")
+            index+=1
     
     with codecs.open(filePath.replace('.txt','')+"_back.txt",'w+','utf-8') as f1:     
         for j in l_desc:
-            f1.writelines(j)     
+            f1.writelines(j)    
+            
+ 
 
 #检查每个文件分隔符的数量
 #sep:分隔符
@@ -143,12 +148,30 @@ def _fillExcel(listTuple,filePath):
     for j in range(len(listTuple)):
             for k in range(len(listTuple[j])):
                 sht.cell(row=j+1,column=k+1).value=listTuple[j][k]
-    wb.save(filePath.replace('txt','xlsx'))              
+    wb.save(filePath.replace('txt','xlsx'))
+
+#判断文件编码格式
+#return:编码,去掉bom之后的read文本
+def _getFileEncoding(filePath):
+    with open(filePath,'rb') as f:
+        f_read=f.read()
+    
+        #四位BOM
+        if f_read[:4] in [codecs.BOM64_BE,codecs.BOM64_LE,codecs.BOM_UTF32,codecs.BOM_UTF32_BE,codecs.BOM_UTF32_LE]:
+            f_read=f_read[4:]
+        #三位BOM
+        elif f_read[:3] in [codecs.BOM_UTF8]:
+            f_read=f_read[3:]
+        #两位BOM    
+        elif f_read[:2] in [codecs.BOM,codecs.BOM32_BE,codecs.BOM_BE,codecs.BOM_LE,codecs.BOM_UTF16,codecs.BOM_UTF16_BE,codecs.BOM_UTF16_LE]:
+            f_read=f_read[2:]
+        f_charInfo=chardet.detect(f_read)   
+    return f_charInfo['encoding'],f_read.decode(f_charInfo['encoding'].replace(chr(0),''))            
                 
 if __name__ == '__main__':
     
     #路径需修改，\用\\代替   
-    rootdir=r"C:\Users\Eric m shi\Desktop\333\wsp_GL.txt"
+    rootdir=r"C:\Users\Eric m shi\Desktop\555\output.TXT"
     
     #分析分隔符数量
 #     list_file(get_separator_exception_lines, rootdir,'|','utf-8','utf-8')
@@ -166,6 +189,7 @@ if __name__ == '__main__':
     
 #     clean_data2(rootdir)
 
-#     createWorkSpace(rootdir,sep="|")
-
-    splitWorkSpace(rootdir)
+    createWorkSpace(rootdir,sep="|")
+#     print(_getFileEncoding(rootdir)[1])
+#     splitWorkSpace(rootdir)
+    
