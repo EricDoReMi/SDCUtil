@@ -1,0 +1,9 @@
+Hi [name]
+
+麻烦您review一下该case，谢谢！
+
+1、WR：[WR]
+
+2、HaloID：[HaloID]
+
+3、工程文件路径：[URL]
