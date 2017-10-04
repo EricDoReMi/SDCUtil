@@ -18,8 +18,6 @@ def copy_lines(filePath):
             f1.write(line.strip()+'\n')
     f1.close()  
 
-
-
 #生成workspace
 def createWorkSpace(filePath,sep):
     """
